@@ -1,4 +1,4 @@
-package firebaseJwtValidator
+package neutrinoapi
 
 type State int8
 

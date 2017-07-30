@@ -1,4 +1,4 @@
-package firebaseJwtValidator
+package neutrinoapi
 
 type GameDataStore interface {
 	GetActiveGames(userID string) ([]*Game, error)
