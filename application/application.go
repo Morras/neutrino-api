@@ -30,7 +30,7 @@ func main() {
 	}
 
 	requestParser := api.NewRequestParser(fjv.NewDefaultTokenValidator(api.FIREBASE_PROJECT_ID))
-	newGameEndpoint := api.NewNewGameEndpoint(requestParser)
+	newGameEndpoint := api.NewNewGameEndpoint(requestParser, nil) //TODO fix up a real data store
 
 	http.Handle("/newGame", newGameEndpoint)
 
