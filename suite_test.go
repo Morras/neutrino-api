@@ -1,10 +1,10 @@
 package neutrinoapi
 
 import (
-. "github.com/onsi/ginkgo"
-. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
-"testing"
+	"testing"
 )
 
 func TestNeutrinoAPI(t *testing.T) {

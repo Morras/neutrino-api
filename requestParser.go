@@ -6,15 +6,19 @@ import (
 	"strings"
 )
 
-type RequestParser struct {
+type RequestParser interface {
+	GetUserID(r *http.Request) (string, error)
+}
+
+type FirebaseTokenRequestParser struct {
 	validator fjv.TokenValidator
 }
 
-func NewRequestParser(validator fjv.TokenValidator) *RequestParser {
-	return &RequestParser{validator: validator}
+func NewRequestParser(validator fjv.TokenValidator) RequestParser {
+	return &FirebaseTokenRequestParser{validator: validator}
 }
 
-func (rp *RequestParser) GetUserID(r *http.Request) (string, error) {
+func (rp *FirebaseTokenRequestParser) GetUserID(r *http.Request) (string, error) {
 
 	jwt := r.Header.Get(JWT_HEADER_KEY)
 

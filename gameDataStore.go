@@ -1,7 +1,9 @@
 package neutrinoapi
 
 type GameDataStore interface {
-	GetActiveGames(userID string) ([]*Game, error)
-	StartNewGame(userID string) error
+	ActiveGames(userID string) ([]*Game, error)
+	NumberOfActiveGames(userID string) (int, error)
+	GameWaitingForPlayers() (*Game, error)
+	StartNewGame(userID string) (string, error)
 	JoinGame(userID string, gameID string) error
 }
