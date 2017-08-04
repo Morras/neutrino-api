@@ -3,63 +3,13 @@ package neutrinoapi_test
 import (
 	"errors"
 	api "github.com/morras/neutrinoapi"
+	"github.com/morras/neutrinoapi/spy"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 )
-
-type AcceptingRequestParser struct {
-	request *http.Request
-}
-
-func (rp *AcceptingRequestParser) GetUserID(r *http.Request) (string, error) {
-	rp.request = r
-	return "TestUserId", nil
-}
-
-type RejectingRequestParser struct {
-}
-
-func (rp *RejectingRequestParser) GetUserID(r *http.Request) (string, error) {
-	return "", api.ErrInvalidJWT
-}
-
-type GameDataStoreSpy struct {
-	NumberOfActiveGamesReturn                                                                        int
-	ActiveGamesReturn                                                                                []*api.Game
-	GameWaitingForPlayersReturn                                                                      *api.Game
-	StartNewGameReturn                                                                               string
-	GameWaitingForPlayersCalled                                                                      bool
-	ActiveGamesErr, StartNewGameErr, JoinGameErr, NumberOfActiveGamesErr, GameWaitingForPlayersErr   error
-	ActiveGamesUserID, NumberOfActiveGamesUserID, StartNewGameUserID, JoinGameUserID, JoinGameGameID string
-}
-
-func (ds *GameDataStoreSpy) ActiveGames(userID string) ([]*api.Game, error) {
-	ds.ActiveGamesUserID = userID
-	return ds.ActiveGamesReturn, ds.ActiveGamesErr
-}
-
-func (ds *GameDataStoreSpy) GameWaitingForPlayers() (*api.Game, error) {
-	ds.GameWaitingForPlayersCalled = true
-	return ds.GameWaitingForPlayersReturn, ds.GameWaitingForPlayersErr
-}
-
-func (ds *GameDataStoreSpy) NumberOfActiveGames(userID string) (int, error) {
-	ds.NumberOfActiveGamesUserID = userID
-	return ds.NumberOfActiveGamesReturn, ds.NumberOfActiveGamesErr
-}
-
-func (ds *GameDataStoreSpy) StartNewGame(userID string) (string, error) {
-	ds.StartNewGameUserID = userID
-	return ds.StartNewGameReturn, ds.StartNewGameErr
-}
-func (ds *GameDataStoreSpy) JoinGame(userID string, gameID string) error {
-	ds.JoinGameUserID = userID
-	ds.JoinGameGameID = gameID
-	return ds.JoinGameErr
-}
 
 var _ = Describe("newGameEndpoint", func() {
 
@@ -69,23 +19,24 @@ var _ = Describe("newGameEndpoint", func() {
 	var response *httptest.ResponseRecorder
 
 	BeforeEach(func() {
-		request, _ = http.NewRequest("GET", "", nil)
+		request = httptest.NewRequest(http.MethodGet, "/", nil)
 		response = httptest.NewRecorder()
 	})
 
 	Context("ServeHTTP method", func() {
 
 		It("Should attempt to get the user from request", func() {
-			requestParserSpy := &AcceptingRequestParser{}
-			endpoint := api.NewNewGameEndpoint(requestParserSpy, &GameDataStoreSpy{})
+			requestParserSpy := &spy.RequestParserSpy{}
+			endpoint := api.NewNewGameEndpoint(requestParserSpy, &spy.GameDataStoreSpy{})
 			endpoint.ServeHTTP(response, request)
 
-			Expect(requestParserSpy.request).To(BeIdenticalTo(request))
+			Expect(requestParserSpy.Request).To(BeIdenticalTo(request))
 		})
 
 		Context("Given the user is not logged in", func() {
 			It("Should return forbidden http response", func() {
-				endpoint := api.NewNewGameEndpoint(&RejectingRequestParser{}, &GameDataStoreSpy{})
+				requestParserSpy := &spy.RequestParserSpy{Err: api.ErrInvalidJWT}
+				endpoint := api.NewNewGameEndpoint(requestParserSpy, &spy.GameDataStoreSpy{})
 				endpoint.ServeHTTP(response, request)
 
 				Expect(response.Code).To(BeIdenticalTo(http.StatusForbidden))
@@ -93,12 +44,12 @@ var _ = Describe("newGameEndpoint", func() {
 		})
 
 		Context("Given the user is logged in", func() {
-			requestParserSpy := &AcceptingRequestParser{}
-			var gameDataStoreSpy *GameDataStoreSpy
+			requestParserSpy := &spy.RequestParserSpy{UserID: testUserID}
+			var gameDataStoreSpy *spy.GameDataStoreSpy
 			var endpoint *api.NewGameEndpoint
 
 			BeforeEach(func() {
-				gameDataStoreSpy = &GameDataStoreSpy{}
+				gameDataStoreSpy = &spy.GameDataStoreSpy{}
 				endpoint = api.NewNewGameEndpoint(requestParserSpy, gameDataStoreSpy)
 			})
 
