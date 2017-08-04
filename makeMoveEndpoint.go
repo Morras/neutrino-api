@@ -54,25 +54,14 @@ func (mme *MakeMoveEndpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	mme.gameController.PlayGame(actualGame)
 
-	neutrinoMove := game.NewMove(makeMoveReq.NeutrinoFromX, makeMoveReq.NeutrinoFromY, makeMoveReq.NeutrinoToX, makeMoveReq.NeutrinoToY)
-
-	_, err = mme.gameController.MakeMove(neutrinoMove)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	pieceMove := game.NewMove(makeMoveReq.PieceFromX, makeMoveReq.PieceFromY, makeMoveReq.PieceToX, makeMoveReq.PieceToY)
-	_, err = mme.gameController.MakeMove(pieceMove)
-	if err != nil {
+	if err = mme.makeMoves(makeMoveReq); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	dsGame.SerializedGame = game.GameToUInt64(mme.gameController.Game())
 
-	err = mme.ds.UpdateGame(dsGame)
-	if err != nil {
+	if err = mme.ds.UpdateGame(dsGame); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -111,4 +100,15 @@ func extractMakeMoveRequest(r *http.Request) (*MakeMoveRequest, error) {
 	}
 
 	return mmReq, nil
+}
+
+func (mme *MakeMoveEndpoint) makeMoves(makeMoveReq *MakeMoveRequest) error {
+	neutrinoMove := game.NewMove(makeMoveReq.NeutrinoFromX, makeMoveReq.NeutrinoFromY, makeMoveReq.NeutrinoToX, makeMoveReq.NeutrinoToY)
+	if _, err := mme.gameController.MakeMove(neutrinoMove); err != nil {
+		return err
+	}
+
+	pieceMove := game.NewMove(makeMoveReq.PieceFromX, makeMoveReq.PieceFromY, makeMoveReq.PieceToX, makeMoveReq.PieceToY)
+	_, err := mme.gameController.MakeMove(pieceMove)
+	return err
 }
