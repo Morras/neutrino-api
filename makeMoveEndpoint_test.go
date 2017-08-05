@@ -3,8 +3,8 @@ package neutrinoapi_test
 import (
 	"bytes"
 	"errors"
-	api "github.com/morras/neutrinoapi"
 	g "github.com/morras/go-neutrino/game"
+	api "github.com/morras/neutrinoapi"
 	"github.com/morras/neutrinoapi/spy"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -162,7 +162,6 @@ var _ = Describe("newGameEndpoint", func() {
 							})
 						})
 					})
-
 				})
 			})
 		})

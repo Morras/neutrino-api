@@ -3,10 +3,10 @@ package neutrinoapi
 import (
 	"encoding/json"
 	"errors"
-	"github.com/morras/go-neutrino/game"
-	"net/http"
-	"io/ioutil"
 	"fmt"
+	"github.com/morras/go-neutrino/game"
+	"io/ioutil"
+	"net/http"
 )
 
 type MakeMoveRequest struct {
@@ -47,7 +47,7 @@ func (mme *MakeMoveEndpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	actualGame := game.UInt64ToGame(dsGame.SerializedGame)
 
-	if playersTurn := isPlayersTurn(userID, dsGame, actualGame); ! playersTurn{
+	if playersTurn := isPlayersTurn(userID, dsGame, actualGame); !playersTurn {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
@@ -70,10 +70,10 @@ func (mme *MakeMoveEndpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 func isPlayersTurn(userID string, datastoreGame *Game, actualGame *game.Game) bool {
 	if userID == datastoreGame.PlayerOneID &&
-		(actualGame.State == game.Player1NeutrinoMove || actualGame.State == game.Player1Move){
+		(actualGame.State == game.Player1NeutrinoMove || actualGame.State == game.Player1Move) {
 		return true
 	} else if userID == datastoreGame.PlayerTwoID &&
-		(actualGame.State == game.Player2NeutrinoMove || actualGame.State == game.Player2Move){
+		(actualGame.State == game.Player2NeutrinoMove || actualGame.State == game.Player2Move) {
 		return true
 	}
 	return false

@@ -13,3 +13,7 @@ const MAX_ACTIVE_GAMES = 5
 // Errors
 var ErrInvalidJWT = errors.New("Invalid JWT supplied.")
 var ErrMissingJWT = errors.New("No JWT supplied.")
+
+// Query parameters
+const QUERY_GET_GAME_GAME_ID = "gameID"
+const QUERY_GET_GAME_INCLUDE_INACTIVE = "includeInactive"
