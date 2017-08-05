@@ -80,7 +80,8 @@ var _ = Describe("newGameEndpoint", func() {
 
 			Context("and the body is missing", func() {
 				It("Should return a bad request", func() {
-					request = httptest.NewRequest(http.MethodPost, "/", nil)
+					// Using http instead of httptest to force a nil body
+					request, _ = http.NewRequest(http.MethodPost, "/", nil)
 					endpoint.ServeHTTP(response, request)
 					Expect(response.Code).To(BeIdenticalTo(http.StatusBadRequest))
 				})
