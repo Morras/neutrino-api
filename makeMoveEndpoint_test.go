@@ -3,9 +3,9 @@ package neutrinoapi_test
 import (
 	"bytes"
 	"errors"
-	g "github.com/morras/go-neutrino/game"
-	api "github.com/morras/neutrinoapi"
-	"github.com/morras/neutrinoapi/spy"
+	g "github.com/Morras/go-neutrino/game"
+	api "github.com/Morras/neutrinoapi"
+	"github.com/Morras/neutrinoapi/spy"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"net/http"
@@ -52,8 +52,8 @@ var _ = Describe("newGameEndpoint", func() {
 	var invalidBody *bytes.Reader
 
 	BeforeEach(func() {
-		invalidBody = bytes.NewReader([]byte(invalidBodyJSON))
-		validBody = bytes.NewReader([]byte(validBodyJSON))
+		//invalidBody = bytes.NewReader([]byte(invalidBodyJSON)) TODO left in to remind me to test for this
+		//validBody = bytes.NewReader([]byte(validBodyJSON))
 		request = httptest.NewRequest(http.MethodPost, "/", nil)
 		response = httptest.NewRecorder()
 		requestParserSpy = &spy.RequestParserSpy{}
@@ -62,16 +62,16 @@ var _ = Describe("newGameEndpoint", func() {
 		endpoint = api.NewMakeMoveEndpoint(requestParserSpy, dataStoreSpy, gameControllerSpy)
 	})
 
-	Context("ServeHTTP method", func() {
+	Context("performAction method", func() {
 		It("Should attempt to get the user from request", func() {
-			endpoint.ServeHTTP(response, request)
+			endpoint.PerformAction(response, request)
 			Expect(requestParserSpy.Request).To(BeIdenticalTo(request))
 		})
 
 		Context("Given the user is not logged in", func() {
 			It("Should return forbidden http response", func() {
 				requestParserSpy.Err = api.ErrInvalidJWT
-				endpoint.ServeHTTP(response, request)
+				endpoint.PerformAction(response, request)
 				Expect(response.Code).To(BeIdenticalTo(http.StatusForbidden))
 			})
 		})
@@ -82,7 +82,7 @@ var _ = Describe("newGameEndpoint", func() {
 				It("Should return a bad request", func() {
 					// Using http instead of httptest to force a nil body
 					request, _ = http.NewRequest(http.MethodPost, "/", nil)
-					endpoint.ServeHTTP(response, request)
+					endpoint.PerformAction(response, request)
 					Expect(response.Code).To(BeIdenticalTo(http.StatusBadRequest))
 				})
 			})
@@ -90,7 +90,7 @@ var _ = Describe("newGameEndpoint", func() {
 			Context("and the body does not contain a valid request", func() {
 				It("Should return a bad request", func() {
 					request = httptest.NewRequest(http.MethodPost, "/", invalidBody)
-					endpoint.ServeHTTP(response, request)
+					endpoint.PerformAction(response, request)
 					Expect(response.Code).To(BeIdenticalTo(http.StatusBadRequest))
 				})
 			})
@@ -102,14 +102,14 @@ var _ = Describe("newGameEndpoint", func() {
 
 				It("Should try and get the game", func() {
 					dataStoreSpy.GameErr = errors.New("error getting game")
-					endpoint.ServeHTTP(response, request)
+					endpoint.PerformAction(response, request)
 					Expect(dataStoreSpy.GameGameID).To(BeIdenticalTo("TestGameID"))
 				})
 
 				Context("and there was an error getting the game", func() {
 					It("Should return an internal server error", func() {
 						dataStoreSpy.GameErr = errors.New("error getting game")
-						endpoint.ServeHTTP(response, request)
+						endpoint.PerformAction(response, request)
 						Expect(response.Code).To(BeIdenticalTo(http.StatusInternalServerError))
 					})
 				})
@@ -128,7 +128,7 @@ var _ = Describe("newGameEndpoint", func() {
 							// We are returning standard game so we know that its player ones turn
 							game.PlayerOneID = "someoneElse"
 							game.PlayerTwoID = testUserID
-							endpoint.ServeHTTP(response, request)
+							endpoint.PerformAction(response, request)
 							Expect(response.Code).To(BeIdenticalTo(http.StatusForbidden))
 						})
 					})
@@ -136,28 +136,28 @@ var _ = Describe("newGameEndpoint", func() {
 					Context("and the move is not valid", func() {
 						It("Should return a bad request", func() {
 							gameControllerSpy.MakeMoveErr = errors.New("Invalid move")
-							endpoint.ServeHTTP(response, request)
+							endpoint.PerformAction(response, request)
 							Expect(response.Code).To(BeIdenticalTo(http.StatusBadRequest))
 						})
 					})
 
 					Context("and the move is valid", func() {
 						It("Should attempt to save the game", func() {
-							endpoint.ServeHTTP(response, request)
+							endpoint.PerformAction(response, request)
 							Expect(dataStoreSpy.UpdateGameGame).ToNot(BeNil())
 						})
 
 						Context("but there was an error saving the game", func() {
 							It("Should return an internal server error", func() {
 								dataStoreSpy.UpdateGameErr = errors.New("error updating game")
-								endpoint.ServeHTTP(response, request)
+								endpoint.PerformAction(response, request)
 								Expect(response.Code).To(BeIdenticalTo(http.StatusInternalServerError))
 							})
 						})
 
 						Context("and the game was successfully saved", func() {
 							It("Should return status ok", func() {
-								endpoint.ServeHTTP(response, request)
+								endpoint.PerformAction(response, request)
 								Expect(response.Code).To(BeIdenticalTo(http.StatusOK))
 							})
 						})

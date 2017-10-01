@@ -2,7 +2,7 @@ package neutrinoapi_test
 
 import (
 	"errors"
-	api "github.com/morras/neutrinoapi"
+	api "github.com/Morras/neutrinoapi"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"net/http"

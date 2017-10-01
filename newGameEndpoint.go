@@ -3,44 +3,33 @@ package neutrinoapi
 import "net/http"
 
 type NewGameEndpoint struct {
-	rp RequestParser
 	ds GameDataStore
 }
 
-func NewNewGameEndpoint(rp RequestParser, ds GameDataStore) *NewGameEndpoint {
-	return &NewGameEndpoint{rp: rp, ds: ds}
+func NewNewGameEndpoint(ds GameDataStore) *NewGameEndpoint {
+	return &NewGameEndpoint{ds: ds}
 }
 
-func (ne *NewGameEndpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	userID, err := ne.rp.GetUserID(r)
-
-	if err != nil {
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
+func (ne *NewGameEndpoint) PerformAction(userID string) (string, int){
 
 	if eligible, statusCode := ne.isEligibleForNewGame(userID); !eligible {
-		w.WriteHeader(statusCode)
-		return
+		return "", statusCode
 	}
 
 	gameID, err := ne.joinExistingGame(userID)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return "", http.StatusInternalServerError
 	}
 	if gameID != "" {
-		w.Write([]byte(gameID))
-		return
+		return gameID, http.StatusOK
 	}
 
 	gameID, err = ne.ds.StartNewGame(userID)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return "", http.StatusInternalServerError
 	}
 
-	w.Write([]byte(gameID))
+	return gameID, http.StatusOK
 }
 
 func (ne *NewGameEndpoint) isEligibleForNewGame(userID string) (bool, int) {
@@ -57,7 +46,7 @@ func (ne *NewGameEndpoint) isEligibleForNewGame(userID string) (bool, int) {
 
 func (ne *NewGameEndpoint) joinExistingGame(userID string) (string, error) {
 	// So this is not at all thread safe. It is possible that two players join the same game,
-	// where the latter one then overrides the first one. I should do something about that if
+	// where the latter one then overrides the first one. TODO I should do something about that if
 	// I ever actually get anyone to play this.
 	activeGame, err := ne.ds.GameWaitingForPlayers()
 

@@ -6,12 +6,14 @@ branches:
   - master
 
 before_install:
-  - go get github.com/onsi/gomega
+  - go get -d github.com/onsi/gomega
   - go get github.com/onsi/ginkgo/ginkgo
   - go get github.com/modocache/gover
+  - go get -d github.com/eawsy/aws-lambda-go-event/...
+  - go get -d github.com/eawsy/aws-lambda-go-core/service/lambda/runtime
 
 script:
-  - ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --trace --race --compilers=2 --coverpkg github.com/morras/neutrinoapi
+  - ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --trace --race --compilers=2 --coverpkg github.com/Morras/neutrinoapi
 
 after_success:
   - gover . coverage.txt

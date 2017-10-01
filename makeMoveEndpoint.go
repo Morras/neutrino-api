@@ -1,11 +1,7 @@
 package neutrinoapi
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"github.com/morras/go-neutrino/game"
-	"io/ioutil"
+	"github.com/Morras/go-neutrino/game"
 	"net/http"
 )
 
@@ -16,57 +12,39 @@ type MakeMoveRequest struct {
 }
 
 type MakeMoveEndpoint struct {
-	rp             RequestParser
 	ds             GameDataStore
 	gameController game.GameController
 }
 
-func NewMakeMoveEndpoint(rp RequestParser, ds GameDataStore, gameController game.GameController) *MakeMoveEndpoint {
-	return &MakeMoveEndpoint{rp: rp, ds: ds, gameController: gameController}
+func NewMakeMoveEndpoint(ds GameDataStore) *MakeMoveEndpoint {
+	return &MakeMoveEndpoint{ds: ds}
 }
 
-func (mme *MakeMoveEndpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	userID, err := mme.rp.GetUserID(r)
-
-	if err != nil {
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
-
-	makeMoveReq, err := extractMakeMoveRequest(r)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
+func (mme *MakeMoveEndpoint) PerformAction(userID string, makeMoveReq *MakeMoveRequest, gameController game.GameController) int {
 	dsGame, err := mme.ds.Game(makeMoveReq.GameID)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return http.StatusInternalServerError
 	}
 
 	actualGame := game.UInt64ToGame(dsGame.SerializedGame)
 
 	if playersTurn := isPlayersTurn(userID, dsGame, actualGame); !playersTurn {
-		w.WriteHeader(http.StatusForbidden)
-		return
+		return http.StatusForbidden
 	}
 
 	mme.gameController.PlayGame(actualGame)
 
 	if err = mme.makeMoves(makeMoveReq); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return http.StatusBadRequest
 	}
 
 	dsGame.SerializedGame = game.GameToUInt64(mme.gameController.Game())
 
 	if err = mme.ds.UpdateGame(dsGame); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return http.StatusInternalServerError
 	}
 
-	w.WriteHeader(http.StatusOK)
+	return http.StatusOK
 }
 func isPlayersTurn(userID string, datastoreGame *Game, actualGame *game.Game) bool {
 	if userID == datastoreGame.PlayerOneID &&
@@ -77,29 +55,6 @@ func isPlayersTurn(userID string, datastoreGame *Game, actualGame *game.Game) bo
 		return true
 	}
 	return false
-}
-
-func extractMakeMoveRequest(r *http.Request) (*MakeMoveRequest, error) {
-	if r.Body == nil {
-		return nil, errors.New("make move endpoint called with empty body")
-	}
-
-	bodyContent, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	mmReq := &MakeMoveRequest{}
-	if err := json.Unmarshal(bodyContent, mmReq); err != nil {
-		fmt.Printf("Error unmarshalling %v", err)
-		return nil, err
-	}
-
-	if mmReq.GameID == "" {
-		return nil, errors.New("Missing game id in make move request body")
-	}
-
-	return mmReq, nil
 }
 
 func (mme *MakeMoveEndpoint) makeMoves(makeMoveReq *MakeMoveRequest) error {

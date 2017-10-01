@@ -1,6 +1,6 @@
 package spy
 
-import api "github.com/morras/neutrinoapi"
+import api "github.com/Morras/neutrinoapi"
 
 type GameDataStoreSpy struct {
 	NumberOfActiveGamesUserID string

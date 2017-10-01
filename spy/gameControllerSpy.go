@@ -1,6 +1,6 @@
 package spy
 
-import "github.com/morras/go-neutrino/game"
+import "github.com/Morras/go-neutrino/game"
 
 type GameControllerSpy struct {
 	PlayGameGame   *game.Game
